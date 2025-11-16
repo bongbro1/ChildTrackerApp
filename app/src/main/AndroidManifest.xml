@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -8,10 +9,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-
-
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <application
         android:allowBackup="true"
@@ -23,14 +23,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ChildTrackerApp"
         tools:targetApi="31">
+
+
         <activity
-            android:name=".parent.ui.view.ParentMainActivity"
+            android:name=".Athu.ui.RegisterActivity"
             android:exported="false" />
         <activity
-            android:name=".child.ui.view.MainActivity_Child"
-            android:exported="false" />
-        <activity
-            android:name=".admin.MainActivity"
+            android:name=".Athu.ui.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -38,6 +37,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".parent.ui.view.ParentMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".child.ui.MainActivity_Child"
+            android:exported="false" />
+        <activity
+            android:name=".admin.MainActivity"
+            android:exported="false" />
 
         <service
             android:name=".service.LocationService"

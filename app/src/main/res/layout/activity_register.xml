@@ -1,0 +1,59 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:padding="24dp"
+    android:gravity="center" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textColor="@android:color/holo_red_dark"
+        android:id="@+id/tvError"
+        >
+
+    </TextView>
+    <EditText
+        android:id="@+id/edtEmail"
+        android:hint="Email" android:inputType="textEmailAddress"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/edtPassword"
+        android:hint="Mật khẩu" android:inputType="textPassword"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <RadioGroup
+        android:id="@+id/radioGroupRole"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/rbParent"
+            android:text="Cha"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            />
+        <RadioButton
+            android:id="@+id/rbChild"
+            android:text="Con"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            />
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/btnRegister"
+        android:text="Đăng ký"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/tvGoToLogin"
+        android:text="Đã có tài khoản? Đăng nhập"
+        android:textColor="@color/teal_700"
+        android:paddingTop="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>
