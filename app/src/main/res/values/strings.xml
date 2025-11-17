@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">ChildTrackerApp</string>
+
+    <string name="arrow_icon">Arrow</string>
+    <string name="navigate">Navigate</string>
+    <string name="more_options">More options</string>
+    <string name="mic_button">Microphone</string>
 </resources>
