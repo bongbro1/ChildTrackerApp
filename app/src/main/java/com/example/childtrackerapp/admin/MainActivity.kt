@@ -2,28 +2,50 @@ package com.example.childtrackerapp.admin
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.rememberNavController
+import com.example.childtrackerapp.data.repository.ScheduleRepository
+import com.example.childtrackerapp.schedule.navigation.AppNavHost
+import com.example.childtrackerapp.schedule.ui.theme.ChildTrackerAppTheme
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-
-import com.example.childtrackerapp.child.ui.MainActivity_Child
-
-import com.example.childtrackerapp.databinding.ActivityMainBinding
-import com.example.childtrackerapp.parent.ui.view.ParentMainActivity
-
-
-class MainActivity : AppCompatActivity() {
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var repository: ScheduleRepository
 
     private lateinit var binding : ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        // Khởi tạo dữ liệu mẫu nếu chưa có (chỉ chạy lần đầu)
+        lifecycleScope.launch {
+            try {
+                repository.initializeSampleData()
+            } catch (e: Exception) {
+                // Log error nhưng không crash app
+                e.printStackTrace()
+            }
+        }
 
-        enableEdgeToEdge()
-
-
-
+        setContent {
+            ChildTrackerAppTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val navController = rememberNavController()
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
     }
 }
