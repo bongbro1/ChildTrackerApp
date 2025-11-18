@@ -3,11 +3,6 @@ package com.example.childtrackerapp.child.ui
 import android.app.Activity
 import android.app.AlertDialog
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.example.childtrackerapp.R
 
 class BlockedAppActivity : Activity() {
 
