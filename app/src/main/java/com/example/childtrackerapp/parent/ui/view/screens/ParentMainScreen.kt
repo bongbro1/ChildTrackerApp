@@ -23,7 +23,7 @@ fun ParentMainScreen(authViewModel: AuthViewModel,
         BottomNavItem("list", "Danh sách", android.R.drawable.ic_menu_agenda),
         BottomNavItem("account", "Tài khoản", com.example.childtrackerapp.R.drawable.ic_account),
         BottomNavItem("schedule", "Lịch trình", android.R.drawable.ic_menu_my_calendar),
-        BottomNavItem("menu", "Menu", android.R.drawable.ic_menu_more)
+        BottomNavItem("logout", "Logout", android.R.drawable.ic_lock_power_off)
     )
 
     Scaffold(
