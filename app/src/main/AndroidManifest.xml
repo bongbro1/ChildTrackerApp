@@ -73,6 +73,10 @@
             android:exported="false"
             android:theme="@style/Theme.ChildTrackerApp" />
         <activity
+            android:name=".Athu.ui.RegisterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ChildTrackerApp"/>
+        <activity
             android:name=".parent.ui.view.ParentMainActivity"
             android:exported="false" />
         <activity

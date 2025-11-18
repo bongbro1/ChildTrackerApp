@@ -21,9 +21,10 @@ import com.example.childtrackerapp.parent.ui.viewmodel.ParentViewModel
 import com.example.childtrackerapp.ui.theme.ChildTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
+@AndroidEntryPoint
 class ParentMainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()

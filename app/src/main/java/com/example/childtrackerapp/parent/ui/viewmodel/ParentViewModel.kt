@@ -5,17 +5,24 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.childtrackerapp.Athu.data.SessionManager
 
 import com.example.childtrackerapp.parent.data.ParentRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
+import javax.inject.Inject
 
-class ParentViewModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class ParentViewModel @Inject constructor(
+    app: Application,
+    private val sessionManager: SessionManager
+) : AndroidViewModel(app) {
 
     private val repository = ParentRepository()
     val childLocations = repository.childLocations
@@ -98,6 +105,9 @@ class ParentViewModel(app: Application) : AndroidViewModel(app) {
         _voiceSendResult.value = null
     }
 
+    fun logout() {
+        sessionManager.clearSession()
+    }
 }
 
 
