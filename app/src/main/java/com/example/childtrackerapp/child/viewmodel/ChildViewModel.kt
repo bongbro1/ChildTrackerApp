@@ -23,8 +23,12 @@ class ChildViewModel(app: Application) : AndroidViewModel(app) {
 
     val isSharingLocation = MutableLiveData(false)
 
+
     init {
         GeoFenceHelper.init(app.applicationContext)
+        if (childId != "unknown_child") {
+            repository.scheduleSendAppsWorker(getApplication())
+        }
 
         repository.startListeningFromParent()
         viewModelScope.launch {

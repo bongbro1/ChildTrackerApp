@@ -16,9 +16,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://jitpack.io")
     }
 }
 
 rootProject.name = "ChildTrackerApp"
 include(":app")
- 
+include(":childtracker-vpn")

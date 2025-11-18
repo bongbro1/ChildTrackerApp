@@ -1,12 +1,20 @@
 package com.example.childtrackerapp.child.data
 
+import android.content.Context
 import android.location.Location
+import android.util.Log
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.example.childtrackerapp.model.VoiceMessage
+import com.example.childtrackerapp.worker.AppsWorker
 import com.google.firebase.database.*
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
+import java.util.concurrent.TimeUnit
 
 class ChildRepository( val childId: String) {
 
@@ -72,6 +80,20 @@ class ChildRepository( val childId: String) {
         )
 
         db.child("locations").child(childId).setValue(data).await()
+    }
+
+
+    fun scheduleSendAppsWorker(context: Context) {
+        val workRequest = PeriodicWorkRequestBuilder<AppsWorker>(1, TimeUnit.HOURS)
+            .setInputData(workDataOf("childId" to childId))
+            .build()
+
+        WorkManager.getInstance(context)
+            .enqueueUniquePeriodicWork(
+                "send_apps_worker_$childId",
+                ExistingPeriodicWorkPolicy.REPLACE,
+                workRequest
+            )
     }
 
 
