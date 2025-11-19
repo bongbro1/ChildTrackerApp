@@ -14,6 +14,7 @@ import com.example.childtrackerapp.chatHelper.ui.screen.ChatScreen
 import com.example.childtrackerapp.child.ui.components.ChildLocationScreen
 
 import com.example.childtrackerapp.child.viewmodel.ChildViewModel
+import com.example.childtrackerapp.parent.ui.view.screens.LogOutScreen
 
 
 @Composable
@@ -59,6 +60,11 @@ fun ChildNavGraph(
                 childId = childId,
                 childName = childName
             )
+        }
+
+
+        composable("logout") {
+            LogOutScreen(childModel)
         }
     }
 }

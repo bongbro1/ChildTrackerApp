@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.childtrackerapp.Athu.data.SessionManager
+import com.example.childtrackerapp.Athu.viewmodel.Logoutable
 
 import com.example.childtrackerapp.parent.data.ParentRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -22,13 +23,16 @@ import javax.inject.Inject
 class ParentViewModel @Inject constructor(
     app: Application,
     private val sessionManager: SessionManager
-) : AndroidViewModel(app) {
+) : AndroidViewModel(app), Logoutable {
 
     private val repository = ParentRepository()
     val childLocations = repository.childLocations
 
     private val _voiceSendResult = MutableStateFlow<Result<Boolean>?>(null)
     val voiceSendResult = _voiceSendResult
+    override suspend fun logout() {
+        sessionManager.clearSession()
+    }
 
 
     init {
@@ -105,9 +109,6 @@ class ParentViewModel @Inject constructor(
         _voiceSendResult.value = null
     }
 
-    fun logout() {
-        sessionManager.clearSession()
-    }
 }
 
 

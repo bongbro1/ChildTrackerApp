@@ -16,6 +16,7 @@ import com.example.childtrackerapp.admin.MainActivity
 import com.example.childtrackerapp.chatHelper.data.ChatViewModel
 import com.example.childtrackerapp.child.ui.nav.ChildNavGraph
 import com.example.childtrackerapp.child.viewmodel.ChildViewModel
+import com.example.childtrackerapp.parent.ui.view.BottomNavItem
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +34,7 @@ fun ChildMainScreen(
         BottomNavItem("list", "Danh sách", android.R.drawable.ic_menu_agenda),
         BottomNavItem("account", "Tài khoản", com.example.childtrackerapp.R.drawable.ic_account),
         BottomNavItem("schedule", "Lịch trình", android.R.drawable.ic_menu_my_calendar),
-        BottomNavItem("menu", "Menu", android.R.drawable.ic_menu_more)
+        BottomNavItem("logout", "Logout", android.R.drawable.ic_lock_power_off)
     )
 
     LaunchedEffect(Unit) {

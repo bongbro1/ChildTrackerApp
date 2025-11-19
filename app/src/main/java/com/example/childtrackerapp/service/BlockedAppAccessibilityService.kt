@@ -16,31 +16,84 @@ import android.os.Looper
 import android.util.Log
 import com.example.childtrackerapp.R
 import androidx.core.app.NotificationCompat
+import com.example.childtrackerapp.Athu.data.SessionManager
 import com.example.childtrackerapp.child.ui.BlockedAppActivity
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class BlockedAppAccessibilityService : AccessibilityService() {
 
     // Danh sách app bị block, có thể update từ Firebase
-    private val blockedApps = listOf("com.zing.zalo", "com.samsung.android.calendar")
+    private var blockedApps = emptyMap<String, String>()
+    private lateinit var sessionManager: SessionManager
+    private val serviceJob = SupervisorJob()
+    private var sessionActive = true
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+
+        sessionManager = SessionManager(applicationContext)
+        sessionActive = sessionManager.isLoggedIn()
+
+        val sessionManager = SessionManager(applicationContext)
+        val childId = sessionManager.getUserId()
+        if (childId.isNullOrEmpty()) {
+            Log.e("AccessibilityService", "Child ID not found")
+            return
+        }
+
+        val dbRef = FirebaseDatabase.getInstance()
+            .getReference("blocked_items")
+            .child(childId)
+            .child("apps")
+
+        // Lắng nghe dữ liệu realtime
+        dbRef.addValueEventListener(object: ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                blockedApps = snapshot.children
+                    .filter { it.child("allowed").getValue(Boolean::class.java) == false }
+                    .mapNotNull {
+                        val pkg = it.child("packageName").getValue(String::class.java)
+                        val name = it.child("name").getValue(String::class.java)
+                        if (pkg != null && name != null) pkg to name else null
+                    }.toMap()
+
+                Log.d("AccessibilityService", "Blocked apps updated: $blockedApps")
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("AccessibilityService", "Failed to fetch blocked apps: ${error.message}")
+            }
+        })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceJob.cancel()
+    }
+
+
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (!sessionActive) return
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val packageName = event.packageName?.toString() ?: return
             Log.d("AccessibilityService", "Current app: $packageName")
 
-            if (blockedApps.contains(packageName)) {
+            if (blockedApps.containsKey(packageName)) {
                 Log.d("AccessibilityService", "Blocked app detected: $packageName")
 
-                // Mở Activity cảnh báo
-//                val intent = Intent(this, BlockedAppActivity::class.java)
-//                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-//                intent.putExtra("appName", packageName)
-//                startActivity(intent)
-
-                // Quay về Home để chặn app
+                val appName = blockedApps[packageName] ?: packageName
                 performGlobalAction(GLOBAL_ACTION_HOME)
                 Handler(Looper.getMainLooper()).postDelayed({
-                    showBlockedAppNotification(packageName)
+                    showBlockedAppNotification(appName)
                 }, 300)
             }
         }

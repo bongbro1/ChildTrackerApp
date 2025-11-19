@@ -11,6 +11,8 @@ import android.util.Base64
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.childtrackerapp.child.helper.decodeKey
+import com.example.childtrackerapp.child.helper.encodeKey
 import com.example.childtrackerapp.parent.ui.model.AppInfo
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
@@ -47,7 +49,9 @@ class AppsWorker(
 
             // 1. Lấy danh sách hiện tại từ Firebase
             val existingSnapshot = dbRef.get().await()
-            val existingPackages = existingSnapshot.children.mapNotNull { it.key }.toSet()
+            val existingPackages = existingSnapshot.children
+                .mapNotNull { decodeKey(it.key!!) }
+                .toSet()
 
             // 2. Tạo danh sách AppInfo mới (chỉ app chưa có trong Firebase)
             val appsToSend = userApps.mapNotNull { appInfo ->
@@ -80,7 +84,8 @@ class AppsWorker(
 
             // 3. Ghi từng app mới vào Firebase (không overwrite)
             appsToSend.forEach { app ->
-                dbRef.child(app.packageName).setValue(app).await()
+                val safeKey = encodeKey(app.packageName)
+                dbRef.child(safeKey).setValue(app).await()
             }
 
             Log.d("SendAppsWorker", "Apps sent successfully")

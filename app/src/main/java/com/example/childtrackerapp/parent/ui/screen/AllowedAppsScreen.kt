@@ -100,21 +100,31 @@ fun AllowedAppsScreen(
                         CircularProgressIndicator()
                     }
                 } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(uiState.apps) { app ->
-                            BlockedAppItem(
-                                app = app,
-                                onToggle = { allowed -> viewModel.toggleApp(selectedChildId as String,app.packageName, allowed)
-                                    Toast.makeText(
-                                        context,
-                                        "${app.name} đã ${if (allowed) "cho phép" else "chặn"}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            )
+                    if (uiState.apps.isEmpty()) {
+                        // Hiển thị khi không có app
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "Không có ứng dụng nào")
+                        }
+                    }  else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(uiState.apps) { app ->
+                                BlockedAppItem(
+                                    app = app,
+                                    onToggle = { allowed -> viewModel.toggleApp(selectedChildId as String,app.packageName, allowed)
+                                        Toast.makeText(
+                                            context,
+                                            "${app.name} đã ${if (allowed) "cho phép" else "chặn"}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                )
+                            }
                         }
                     }
                 }

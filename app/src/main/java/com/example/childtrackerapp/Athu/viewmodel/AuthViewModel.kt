@@ -155,3 +155,7 @@ class AuthViewModel : ViewModel() {
 
 
 }
+
+interface Logoutable {
+    suspend fun logout()
+}

@@ -56,6 +56,7 @@ class LocationService : Service() {
         startForeground(1, notif)
     }
 
+
     private fun checkIfGpsEnabled() {
         val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {

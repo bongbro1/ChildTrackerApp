@@ -4,6 +4,7 @@ import android.content.Context
 import android.location.Location
 import android.util.Log
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -82,19 +83,26 @@ class ChildRepository( val childId: String) {
         db.child("locations").child(childId).setValue(data).await()
     }
 
-
     fun scheduleSendAppsWorker(context: Context) {
-        val workRequest = PeriodicWorkRequestBuilder<AppsWorker>(1, TimeUnit.HOURS)
+        // 1. Chạy ngay lần đầu
+        val immediateWork = OneTimeWorkRequestBuilder<AppsWorker>()
             .setInputData(workDataOf("childId" to childId))
             .build()
 
-        WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(
-                "send_apps_worker_$childId",
-                ExistingPeriodicWorkPolicy.REPLACE,
-                workRequest
-            )
+        WorkManager.getInstance(context).enqueue(immediateWork)
+
+        // 2. Lên lịch định kỳ
+        val periodicWork = PeriodicWorkRequestBuilder<AppsWorker>(1, TimeUnit.HOURS)
+            .setInputData(workDataOf("childId" to childId))
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "send_apps_worker_$childId",
+            ExistingPeriodicWorkPolicy.REPLACE,
+            periodicWork
+        )
     }
+
 
 
 }
