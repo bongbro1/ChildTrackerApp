@@ -7,14 +7,22 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.childtrackerapp.Athu.data.SessionManager
+import com.example.childtrackerapp.Athu.viewmodel.Logoutable
 import com.example.childtrackerapp.child.data.ChildRepository
 import com.example.childtrackerapp.child.helper.GeoFenceHelper
 import com.example.childtrackerapp.service.LocationService
 import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ChildViewModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class ChildViewModel @Inject constructor(
+    app: Application,
+    private val sessionManager: SessionManager
+) : AndroidViewModel(app), Logoutable {
 
     private val auth = FirebaseAuth.getInstance()
     private val childId: String get() = auth.currentUser?.uid ?: "unknown_child"
@@ -22,7 +30,9 @@ class ChildViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = ChildRepository(childId)
 
     val isSharingLocation = MutableLiveData(false)
-
+    override suspend fun logout() {
+        sessionManager.clearSession()
+    }
 
     init {
         GeoFenceHelper.init(app.applicationContext)

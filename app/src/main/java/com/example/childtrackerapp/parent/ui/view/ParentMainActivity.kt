@@ -14,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.childtrackerapp.Athu.viewmodel.AuthViewModel
+import com.example.childtrackerapp.helpers.WorkerScheduler
 import com.example.childtrackerapp.model.User
 import com.example.childtrackerapp.parent.ui.viewmodel.AllowedAppsViewModel
 
@@ -24,14 +25,20 @@ import com.google.firebase.database.FirebaseDatabase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
 @AndroidEntryPoint
 class ParentMainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
     private val allowedAppsViewModel: AllowedAppsViewModel by viewModels()
+    @Inject
+    lateinit var workerScheduler: WorkerScheduler
     private val parentViewModel: ParentViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        workerScheduler.scheduleAppStatusWorker(this) // len lich check app
 
         lifecycleScope.launch {
             val firebaseUser = FirebaseAuth.getInstance().currentUser

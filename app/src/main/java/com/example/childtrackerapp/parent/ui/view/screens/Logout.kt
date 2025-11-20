@@ -5,11 +5,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.example.childtrackerapp.Athu.ui.LoginActivity
+import com.example.childtrackerapp.Athu.viewmodel.Logoutable
 import com.example.childtrackerapp.parent.ui.viewmodel.ParentViewModel
 
 @Composable
 fun LogOutScreen(
-    viewModel: ParentViewModel
+    viewModel: Logoutable
 ) {
     val context = LocalContext.current
 

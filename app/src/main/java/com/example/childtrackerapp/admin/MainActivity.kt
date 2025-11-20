@@ -13,7 +13,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.childtrackerapp.data.repository.ScheduleRepository
 import com.example.childtrackerapp.schedule.navigation.AppNavHost
 import com.example.childtrackerapp.schedule.ui.theme.ChildTrackerAppTheme
-import com.example.childtrackerapp.service.BlockerService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject

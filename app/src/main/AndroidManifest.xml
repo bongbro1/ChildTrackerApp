@@ -81,7 +81,8 @@
             android:exported="false" />
         <activity
             android:name=".child.ui.MainActivity_Child"
-            android:exported="false" /> <!-- LocationService -->
+            android:exported="false" />
+        <!-- LocationService -->
         <activity
             android:name=".service.NotificationPermissionActivity"
             android:exported="false" />
@@ -95,21 +96,6 @@
             android:name=".service.ChildTrackerVpnService"
             android:exported="true"
             android:permission="android.permission.BIND_VPN_SERVICE" />
-        <service
-            android:name=".service.BlockerService"
-            android:exported="false" />
-        <service
-            android:name=".service.BlockedAppAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
-        </service>
     </application>
 
 </manifest>
