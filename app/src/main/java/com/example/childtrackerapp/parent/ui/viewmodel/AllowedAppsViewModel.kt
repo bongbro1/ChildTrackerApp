@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import androidx.core.graphics.drawable.toBitmap
 import com.google.firebase.database.FirebaseDatabase
 import android.app.usage.UsageStatsManager
+import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -23,27 +24,32 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.childtrackerapp.Athu.data.SessionManager
+import com.example.childtrackerapp.parent.data.ParentRepository
 import com.example.childtrackerapp.parent.helper.toBitmapFromBase64
+import com.example.childtrackerapp.parent.ui.model.AppUsage
+import com.example.childtrackerapp.parent.ui.model.UsageFilter
 import com.google.firebase.database.DataSnapshot
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
 import org.json.JSONArray
 import java.util.Calendar
+import javax.inject.Inject
 
-class AllowedAppsViewModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class AllowedAppsViewModel @Inject constructor(
+    private val parentRepo: ParentRepository,
+    @ApplicationContext app: Context
+) : AndroidViewModel(app as Application){
 
     private val _uiState = MutableStateFlow(AllowedAppsUiState())
     val uiState: StateFlow<AllowedAppsUiState> = _uiState
-
-    private val _blockedWebsites = mutableStateListOf<String>()
-    val blockedWebsites: List<String> get() = _blockedWebsites
 
     private val sessionManager = SessionManager(app)
     private val currentParentId: String? = sessionManager.getUserId()
     var selectedChildId: String? = null
 
-    fun DataSnapshot.getString(key: String): String = child(key).getValue(String::class.java) ?: ""
-    fun DataSnapshot.getBoolean(key: String): Boolean = child(key).getValue(Boolean::class.java) ?: true
 
     private val fb = FirebaseDatabase.getInstance().getReference("blocked_items");
 
@@ -54,77 +60,28 @@ class AllowedAppsViewModel(app: Application) : AndroidViewModel(app) {
     fun onChildSelected(childId: String) {
         selectedChildId = childId
         loadApps(childId)
-        loadBlockedWebsites(childId)
+        loadStatisticsForChild(childId)
     }
 
     private fun loadChildren() {
         viewModelScope.launch {
-            try {
-                val usersRef = FirebaseDatabase.getInstance().getReference("users")
-                val snapshot = usersRef.orderByChild("parentId").equalTo(currentParentId).get().await()
-                val childrenList = snapshot.children.mapNotNull { childSnap ->
-
-                    val role = childSnap.child("role").getValue(String::class.java)
-                    val uid = childSnap.child("uid").getValue(String::class.java)
-                    val name = childSnap.child("name").getValue(String::class.java)
-                    if ((role == "child" || role == "con") && uid != null) {
-                        Child(uid = uid, name = name ?: "Không tên")
-                    } else null
-                }
-                _uiState.value = _uiState.value.copy(children = childrenList)
-            } catch (e: Exception) {
-                // log lỗi
-                Log.e("AllowedAppsVM", "Failed to load children", e)
-            }
+            val childrenList = parentRepo.getChildrenOfParent(currentParentId!!)
+            _uiState.value = _uiState.value.copy(children = childrenList)
         }
     }
 
     fun loadApps(childId: String) {
-        fb.child(childId).get()
-            .addOnSuccessListener { snapshot ->
-                val appsList = snapshot.child("apps").children.mapNotNull { appSnap ->
-                    val name = appSnap.getString("name")
-                    val packageName = appSnap.key ?: return@mapNotNull null
-                    val isAllowed = appSnap.getBoolean("allowed")
-                    val usageTime = appSnap.getString("usageTime")
-                    val iconBase64 = appSnap.child("iconBase64").getValue(String::class.java)
+        _uiState.update { it.copy(isLoading = true) }
 
-                    AppInfo(name, packageName, iconBase64, isAllowed, usageTime)
-                }
+        viewModelScope.launch {
+            val apps = parentRepo.loadApps(childId)
 
-                val websites = snapshot.child("websites").children.mapNotNull { siteSnap ->
-                    if (siteSnap.value == true) siteSnap.key?.replace("_", ".") else null
-                }
-
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        apps = appsList,
-                        blockedWebsites = websites,
-                        isLoading = false
-                    )
-                }
+            _uiState.update { current ->
+                current.copy(
+                    apps = apps,
+                    isLoading = false
+                )
             }
-            .addOnFailureListener { e ->
-                Log.e("DEBUG", "Failed to load blocked items: ${e.message}")
-                _uiState.update { it.copy(isLoading = false) }
-            }
-    }
-
-    fun loadBlockedWebsites(childId: String) {
-        fb.child(childId).child("websites").get().addOnSuccessListener { snapshot ->
-
-            val blockedSites = mutableListOf<String>()
-            snapshot.children.forEach { child ->
-                val site = child.key?.replace("_", ".") ?: ""
-                if (site.isNotEmpty()) blockedSites.add(site)
-            }
-            // Cập nhật UI state riêng cho blockedWebsites
-            _uiState.update {
-                it.copy(blockedWebsites = blockedSites)
-            }
-
-        }.addOnFailureListener { exception ->
-            Log.e("DEBUG", "Failed to load blocked websites: ${exception.message}")
         }
     }
 
@@ -141,39 +98,47 @@ class AllowedAppsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setAppAllowed(pkg: String, allowed: Boolean) {
-        fb.child(pkg).setValue(allowed)
+    fun onFilterChanged(filter: UsageFilter) {
+        Log.d("AllowedAppsViewModel", "onFilterChanged called with filter: $filter, selectedChildId: $selectedChildId")
+        loadStatisticsForChild(selectedChildId!!, filter)
     }
 
-    fun addBlockedWebsite(childId: String, website: String) {
-        if (!_blockedWebsites.contains(website)) {
-            _blockedWebsites.add(website)
-            fb.child(childId)
-                .child("websites")
-                .child(website.replace(".", "_"))
-                .setValue(true)
+    fun loadStatisticsForChild(childId: String, filter: UsageFilter = UsageFilter.DAY) {
+        Log.d("AllowedAppsViewModel", "loadStatisticsForChild called with childId: $childId, filter: $filter")
+        viewModelScope.launch {
+            _uiState.update { it.copy(statisticsLoading = true, filter = filter) }
 
-            _uiState.update { it.copy(blockedWebsites = _blockedWebsites.toList()) }
+            val result = parentRepo.getUsageStats(childId, filter)
+
+            _uiState.update {
+                it.copy(
+                    selectedChildName = result.childName,
+                    currentDateString = result.dateString,
+                    totalUsageMinutes = result.totalMinutes,
+                    topApps = result.topApps,
+                    allApps = result.allApps,
+                    statisticsLoading = false
+                )
+            }
         }
-    }
-    fun removeBlockedWebsite(childId: String, website: String) {
-        _blockedWebsites.remove(website)
-
-        fb.child(childId)
-            .child("websites")
-            .child(website.replace(".", "_"))
-            .removeValue()
-
-        _uiState.update { it.copy(blockedWebsites = _blockedWebsites.toList()) }
     }
 
 }
 
 data class AllowedAppsUiState(
     val isLoading: Boolean = true,
+    val statisticsLoading: Boolean = true,
     val children: List<Child> = emptyList(),
     val apps: List<AppInfo> = emptyList(),
-    val blockedWebsites: List<String> = emptyList()
+
+    // Dành cho tab Thống kê
+    val selectedChildName: String? = null,
+    val currentDateString: String = "",
+    val totalUsageMinutes: Int = 0,
+    val topApps: List<AppUsage> = emptyList(),
+    val allApps: List<AppUsage> = emptyList(),
+    val filter: UsageFilter = UsageFilter.DAY,
+    val onFilterChanged: (UsageFilter) -> Unit = {}
 )
 
 

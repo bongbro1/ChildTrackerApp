@@ -44,22 +44,12 @@ fun ParentNavGraph(
         // ALLOWED APPS (giữ nguyên)
         composable("allowed_apps") {
             AllowedAppsScreen(
+                viewModel = allowedAppsViewModel,
                 uiState = allowedAppsViewModel.uiState.collectAsState().value,
-                onToggle = { pkg, allowed ->
-                    allowedAppsViewModel.setAppAllowed(pkg, allowed)
-                },
-                onBack = { navController.popBackStack() },
-                onAddWebsite = { childId, website ->
-                    allowedAppsViewModel.addBlockedWebsite(childId, website)
-                },
-                onRemoveWebsite = { childId, website ->
-                    allowedAppsViewModel.removeBlockedWebsite(childId, website)
-                },
-                onChildSelected = { childId ->
-                    allowedAppsViewModel.onChildSelected(childId)
-                }
+                onBack = { navController.popBackStack() }
             )
         }
+
 
         // LOGOUT
         composable("logout") {

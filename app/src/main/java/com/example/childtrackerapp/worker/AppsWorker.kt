@@ -2,6 +2,7 @@ package com.example.childtrackerapp.worker
 
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -17,6 +18,8 @@ import com.example.childtrackerapp.parent.ui.model.AppInfo
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
+import java.util.Calendar
+import java.util.Date
 
 class AppsWorker(
     appContext: Context,
@@ -27,15 +30,32 @@ class AppsWorker(
         val childId = inputData.getString("childId") ?: return Result.failure()
 
         val pm = applicationContext.packageManager
-        val installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        val launcherIntent = Intent(Intent.ACTION_MAIN, null)
+        launcherIntent.addCategory(Intent.CATEGORY_LAUNCHER)
 
-        val userApps = installedApps.filter { appInfo ->
-            (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0
-        }
+        val installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        val includePackages = listOf("com.google.android.youtube", "com.zhiliaoapp.musically", "com.ss.android.ugc.trill")
+
+        val userApps = (installedApps.filter { appInfo ->
+            ((appInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0) ||
+                    includePackages.contains(appInfo.packageName)
+        }).distinctBy { it.packageName }
+
+//        Log.d("UserAppsDebug", "===== Final user apps list =====")
+//        userApps.forEach { app ->
+//            Log.d("UserAppsDebug", "UserApp: ${app.packageName} - ${app.loadLabel(pm)}")
+//        }
 
         val usageStatsManager = applicationContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 24 * 60 * 60 * 1000L
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = System.currentTimeMillis()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startTime = calendar.timeInMillis
+
         val usageStatsList = usageStatsManager.queryUsageStats(
             UsageStatsManager.INTERVAL_DAILY, startTime, endTime
         )
@@ -53,7 +73,25 @@ class AppsWorker(
                 .mapNotNull { decodeKey(it.key!!) }
                 .toSet()
 
-            // 2. Tạo danh sách AppInfo mới (chỉ app chưa có trong Firebase)
+            // ============================
+            // 🔥 CẬP NHẬT usageTime cho app còn tồn tại
+            // ============================
+            existingSnapshot.children.forEach { childSnapshot ->
+                val pkg = decodeKey(childSnapshot.key!!) ?: return@forEach
+                val usageMs = usageMap[pkg]?.totalTimeInForeground ?: 0L
+
+                val existingApp = childSnapshot.getValue(AppInfo::class.java)
+                if (existingApp != null) {
+                    val updatedApp = existingApp.copy(
+                        usageTime = formatUsageTime(usageMs),
+                    )
+                    dbRef.child(childSnapshot.key!!).setValue(updatedApp).await()
+                }
+            }
+
+            // ============================
+            // 🔥 THÊM APP MỚI PHÁT HIỆN TRONG MÁY
+            // ============================
             val appsToSend = userApps.mapNotNull { appInfo ->
                 if (existingPackages.contains(appInfo.packageName)) return@mapNotNull null
 
@@ -82,16 +120,16 @@ class AppsWorker(
                 )
             }
 
-            // 3. Ghi từng app mới vào Firebase (không overwrite)
+            // Gửi app mới
             appsToSend.forEach { app ->
                 val safeKey = encodeKey(app.packageName)
                 dbRef.child(safeKey).setValue(app).await()
             }
 
-            Log.d("SendAppsWorker", "Apps sent successfully")
+            Log.d("SendAppsWorker", "Apps synced successfully")
             Result.success()
         } catch (e: Exception) {
-            Log.e("SendAppsWorker", "Failed to send apps: ${e.message}")
+            Log.e("SendAppsWorker", "Failed: ${e.message}")
             Result.retry()
         }
     }

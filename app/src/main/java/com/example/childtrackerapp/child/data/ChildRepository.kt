@@ -9,6 +9,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.childtrackerapp.model.VoiceMessage
+import com.example.childtrackerapp.worker.AppStatusWorker
 import com.example.childtrackerapp.worker.AppsWorker
 import com.google.firebase.database.*
 
@@ -102,8 +103,6 @@ class ChildRepository( val childId: String) {
             periodicWork
         )
     }
-
-
 
 }
 

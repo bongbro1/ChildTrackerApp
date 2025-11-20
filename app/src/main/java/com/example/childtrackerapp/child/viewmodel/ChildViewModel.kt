@@ -11,7 +11,6 @@ import com.example.childtrackerapp.Athu.data.SessionManager
 import com.example.childtrackerapp.Athu.viewmodel.Logoutable
 import com.example.childtrackerapp.child.data.ChildRepository
 import com.example.childtrackerapp.child.helper.GeoFenceHelper
-import com.example.childtrackerapp.service.BlockedAppAccessibilityService
 import com.example.childtrackerapp.service.LocationService
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +32,6 @@ class ChildViewModel @Inject constructor(
     val isSharingLocation = MutableLiveData(false)
     override suspend fun logout() {
         sessionManager.clearSession()
-        val serviceIntent = Intent(getApplication<Application>(), BlockedAppAccessibilityService::class.java)
     }
 
     init {

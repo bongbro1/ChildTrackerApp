@@ -22,10 +22,13 @@ import com.example.childtrackerapp.Athu.viewmodel.AuthViewModel
 import com.example.childtrackerapp.child.helper.PermissionHelper
 import com.example.childtrackerapp.child.ui.screen.ChildMainScreen
 import com.example.childtrackerapp.child.viewmodel.ChildViewModel
+import com.example.childtrackerapp.helpers.NotificationHelper
+import com.example.childtrackerapp.helpers.WorkerScheduler
 import com.example.childtrackerapp.service.LocationService
 import com.example.childtrackerapp.service.NotificationPermissionActivity
 import com.example.childtrackerapp.ui.theme.ChildTrackerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 import kotlin.getValue
 
@@ -34,13 +37,15 @@ import kotlin.getValue
 class MainActivity_Child : ComponentActivity() {
     private val authViewModel: AuthViewModel by viewModels()
 
+    @Inject
+    lateinit var workerScheduler: WorkerScheduler
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         startLocationServiceIfPermitted()
 
-        PermissionHelper.showAccessibilityNotificationIfNeeded(this)
         PermissionHelper.showUsageAccessNotificationIfNeeded(this)
+        workerScheduler.scheduleAppStatusWorker(this) // len lich check app
 
         // Check và request notification permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
