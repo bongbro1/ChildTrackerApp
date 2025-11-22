@@ -37,8 +37,6 @@ class ParentViewModel @Inject constructor(
 
     init {
         loadChildrenLocations()
-
-
     }
     fun loadChildrenLocations() {
         val parentId = FirebaseAuth.getInstance().currentUser?.uid ?: return

@@ -6,6 +6,9 @@ data class AppInfo(
     val name: String = "",
     val packageName: String = "",
     val iconBase64: String? = null,
-    val isAllowed: Boolean = false,
-    val usageTime: String = ""
+    val allowed: Boolean = false,
+    val usageTime: String = "",
+    val startTime: String = "",
+    val endTime: String = "",
+    val allowedDays: List<String> = emptyList()
 )

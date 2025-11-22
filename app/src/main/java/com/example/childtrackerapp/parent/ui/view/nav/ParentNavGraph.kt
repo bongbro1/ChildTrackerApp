@@ -41,7 +41,7 @@ fun ParentNavGraph(
             LocationScreen(parentModel)
         }
 
-        // ALLOWED APPS (giữ nguyên)
+        // ALLOWED APPS
         composable("allowed_apps") {
             AllowedAppsScreen(
                 viewModel = allowedAppsViewModel,

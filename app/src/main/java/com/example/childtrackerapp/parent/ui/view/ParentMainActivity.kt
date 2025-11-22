@@ -1,23 +1,20 @@
 package com.example.childtrackerapp.parent.ui.view
 
-import android.app.Activity
 import android.app.AppOpsManager
-import android.content.Context
 import android.content.Intent
-import android.net.VpnService
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.childtrackerapp.Athu.viewmodel.AuthViewModel
 import com.example.childtrackerapp.helpers.WorkerScheduler
 import com.example.childtrackerapp.model.User
 import com.example.childtrackerapp.parent.ui.viewmodel.AllowedAppsViewModel
-
+import com.example.childtrackerapp.parent.ui.viewmodel.LogsViewModel
 import com.example.childtrackerapp.parent.ui.viewmodel.ParentViewModel
 import com.example.childtrackerapp.ui.theme.ChildTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
@@ -32,6 +29,7 @@ class ParentMainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
     private val allowedAppsViewModel: AllowedAppsViewModel by viewModels()
+    private val logsViewModel: LogsViewModel by viewModels()
     @Inject
     lateinit var workerScheduler: WorkerScheduler
     private val parentViewModel: ParentViewModel by viewModels()
@@ -39,6 +37,8 @@ class ParentMainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         workerScheduler.scheduleAppStatusWorker(this) // len lich check app
+
+        logsViewModel.startListeningLogs()
 
         lifecycleScope.launch {
             val firebaseUser = FirebaseAuth.getInstance().currentUser
@@ -71,16 +71,6 @@ class ParentMainActivity : ComponentActivity() {
             }
         }
 
-
-//        if (!checkUsagePermission()) {
-//            requestUsagePermission()
-//            Toast.makeText(
-//                this,
-//                "Vui lòng cấp quyền Truy cập dữ liệu ứng dụng để xem thời gian sử dụng",
-//                Toast.LENGTH_LONG
-//            ).show()
-//        }
-
         setContent {
             ChildTrackerTheme {
                 ParentMainScreen(authViewModel = authViewModel,
@@ -91,16 +81,7 @@ class ParentMainActivity : ComponentActivity() {
     }
     override fun onResume() {
         super.onResume()
-        // Kiểm tra lại khi quay lại Activity từ Cài đặt
-        if (checkUsagePermission()) {
-            // Quyền đã được cấp, có thể load lại dữ liệu hoặc refresh UI
-            Toast.makeText(
-                this,
-                "OK",
-                Toast.LENGTH_LONG
-            ).show()
-        } else {
-            // Quyền chưa có, bạn có thể nhắc nhở người dùng
+        if (!checkUsagePermission()) {
             Toast.makeText(
                 this,
                 "Vui lòng cấp quyền Truy cập dữ liệu ứng dụng để xem thời gian sử dụng",

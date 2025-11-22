@@ -33,9 +33,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -91,11 +92,11 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location"
-            tools:ignore="ForegroundServicePermission" /> <!-- ChildTrackerVpnService -->
+            tools:ignore="ForegroundServicePermission" />
         <service
-            android:name=".service.ChildTrackerVpnService"
-            android:exported="true"
-            android:permission="android.permission.BIND_VPN_SERVICE" />
+            android:name=".service.AppMonitorService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false"/>
     </application>
 
 </manifest>

@@ -1,6 +1,0 @@
-[
-  { "name": "TikTok", "packageName": "com.zhiliaoapp.musically", "iconRes": "ic_tiktok" },
-  { "name": "Facebook", "packageName": "com.facebook.katana", "iconRes": "ic_facebook" },
-  { "name": "Instagram", "packageName": "com.instagram.android", "iconRes": "ic_instagram" },
-  { "name": "YouTube", "packageName": "com.google.android.youtube", "iconRes": "ic_youtube" }
-]

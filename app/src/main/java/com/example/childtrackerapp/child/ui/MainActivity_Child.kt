@@ -24,6 +24,7 @@ import com.example.childtrackerapp.child.ui.screen.ChildMainScreen
 import com.example.childtrackerapp.child.viewmodel.ChildViewModel
 import com.example.childtrackerapp.helpers.NotificationHelper
 import com.example.childtrackerapp.helpers.WorkerScheduler
+import com.example.childtrackerapp.service.AppMonitorService
 import com.example.childtrackerapp.service.LocationService
 import com.example.childtrackerapp.service.NotificationPermissionActivity
 import com.example.childtrackerapp.ui.theme.ChildTrackerTheme
@@ -44,7 +45,9 @@ class MainActivity_Child : ComponentActivity() {
 
         startLocationServiceIfPermitted()
 
-        PermissionHelper.showUsageAccessNotificationIfNeeded(this)
+        PermissionHelper.showUsageAccessNotificationIfNeeded(this) // quyền truy cập time sử dụng các app
+
+        workerScheduler.scheduleSendAppsWorker(this) // len lich gửi danh sách các app lên firebase
         workerScheduler.scheduleAppStatusWorker(this) // len lich check app
 
         // Check và request notification permission
@@ -52,6 +55,14 @@ class MainActivity_Child : ComponentActivity() {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 startActivity(Intent(this, NotificationPermissionActivity::class.java))
             }
+        }
+
+        // service giám sát app
+        val intent = Intent(this, AppMonitorService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
         }
 
         setContent {

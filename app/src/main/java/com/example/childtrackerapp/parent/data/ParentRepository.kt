@@ -16,15 +16,11 @@ import com.example.childtrackerapp.utils.parseUsageTimeToMinutes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
 import java.io.File
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 
 class ParentRepository @Inject constructor() {
@@ -179,75 +175,109 @@ class ParentRepository @Inject constructor() {
             val snapshot = ref.child(childId).get().await()
 
             snapshot.child("apps").children.mapNotNull { appSnap ->
-                val name = appSnap.getString("name")
+                val name = appSnap.getString("name") ?: ""
                 val packageName = appSnap.key ?: return@mapNotNull null
-                val isAllowed = appSnap.getBoolean("allowed")
-                val usageTime = appSnap.getString("usageTime")
+                val isAllowed = appSnap.child("allowed").getValue(Boolean::class.java) ?: false
+                val usageTime = appSnap.getString("usageTime") ?: ""
                 val iconBase64 = appSnap.child("iconBase64").getValue(String::class.java)
+                val startTime = appSnap.child("startTime").getValue(String::class.java) ?: "00:00"
+                val endTime = appSnap.child("endTime").getValue(String::class.java) ?: "23:59"
+                val allowedDays = appSnap.child("allowedDays").getValue(object : GenericTypeIndicator<List<String>>() {}) ?: emptyList()
 
-                AppInfo(name, packageName, iconBase64, isAllowed, usageTime)
+                AppInfo(
+                    name = name,
+                    packageName = packageName,
+                    iconBase64 = iconBase64,
+                    allowed = isAllowed,
+                    usageTime = usageTime,
+                    startTime = startTime,
+                    endTime = endTime,
+                    allowedDays = allowedDays
+                )
+            }.sortedByDescending { app ->
+                parseUsageTimeToMinutes(app.usageTime)
             }
 
         } catch (e: Exception) {
             Log.e("ParentRepo", "loadApps error: ${e.message}")
-            emptyList<AppInfo>()
+            emptyList()
+        }
+    }
+
+    suspend fun updateAppSettings(childId: String, appInfo: AppInfo): Boolean {
+        return try {
+            val path = "blocked_items/$childId/apps/${appInfo.packageName}"
+            val map = mapOf(
+                "allowed" to appInfo.allowed,
+                "startTime" to appInfo.startTime,
+                "endTime" to appInfo.endTime,
+                "allowedDays" to appInfo.allowedDays
+            )
+            db.child(path).updateChildren(map).await()
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
 
-    suspend fun getUsageStats(childId: String, filter: UsageFilter = UsageFilter.DAY): UsageStats {
+    suspend fun getUsageStats(childId: String, filter: UsageFilter): UsageStats {
         return try {
-            Log.d("ParentRepository", "Fetching usage stats for childId: $childId, filter: $filter")
-            val dbRef = FirebaseDatabase.getInstance().getReference("blocked_items")
-            val appsSnapshot = dbRef.child(childId).child("apps").get().await()
-            Log.d("ParentRepository", "Apps snapshot fetched, children count: ${appsSnapshot.childrenCount}")
+            val dbRef = FirebaseDatabase.getInstance()
+                .getReference("blocked_items")
+                .child(childId)
+                .child("apps")
 
-            // Parse usage time & lọc theo filter
-            val allApps = appsSnapshot.children.mapNotNull { appSnap ->
-                val packageName = appSnap.key ?: return@mapNotNull null
+            val appsSnapshot = dbRef.get().await()
+
+            val allApps = mutableListOf<AppUsage>()
+
+            val now = Calendar.getInstance()
+
+            appsSnapshot.children.forEach { appSnap ->
+                val packageName = appSnap.key ?: return@forEach
                 val name = appSnap.getString("name").ifEmpty { packageName }
-                val usageTimeStr = appSnap.getString("usageTime")
-                val minutes = parseUsageTimeToMinutes(usageTimeStr)
-                Log.d("ParentRepository", "App: $name, usageTimeStr: $usageTimeStr, minutes: $minutes")
+
+                val usageByDate = appSnap.child("usage")
+
+                var totalMinutes = 0
+
+                usageByDate.children.forEach { dateSnap ->
+                    val dateStr = dateSnap.key ?: return@forEach
+                    val usageStr = dateSnap.getValue(String::class.java)
 
 
+                    if (isWithinFilter(dateStr, filter)) {
+                        totalMinutes += parseUsageTimeToMinutes(usageStr!!)
+                    }
+                }
 
-                // Lọc theo filter nếu cần
-                if (minutes > 0 && isWithinFilter(usageTimeStr, filter)) {
-                    AppUsage(packageName, name, minutes)
-                } else null
-            }.sortedByDescending { it.timeMinutes }
+                if (totalMinutes > 0) {
+                    allApps.add(AppUsage(packageName, name, totalMinutes))
+                }
+            }
 
-            val totalMinutes = allApps.sumOf { it.timeMinutes }
-            val topApps = allApps.take(5)
+            val sorted = allApps.sortedByDescending { it.timeMinutes }
+            val topApps = sorted.take(5)
 
-            Log.d("ParentRepository", "Total minutes: $totalMinutes, topApps: ${topApps.map { it.name }}")
-
-            // Lấy tên child
             val childSnapshot = FirebaseDatabase.getInstance()
-                .getReference("users").child(childId).get().await()
+                .getReference("users")
+                .child(childId)
+                .get().await()
+
             val childName = childSnapshot.getString("name").ifEmpty { "Không rõ" }
 
             UsageStats(
                 childName = childName,
                 dateString = getDateString(filter),
-                totalMinutes = totalMinutes,
+                totalMinutes = sorted.sumOf { it.timeMinutes },
                 topApps = topApps,
-                allApps = allApps
+                allApps = sorted
             )
 
         } catch (e: Exception) {
-            Log.e("ParentRepository", "getUsageStats error: ${e.message}")
-            UsageStats(
-                childName = "Không rõ",
-                dateString = "",
-                totalMinutes = 0,
-                topApps = emptyList(),
-                allApps = emptyList()
-            )
+            Log.e("ParentRepository", "Error: $e")
+            UsageStats("Không rõ", "", 0, emptyList(), emptyList())
         }
     }
-
-
-
 }

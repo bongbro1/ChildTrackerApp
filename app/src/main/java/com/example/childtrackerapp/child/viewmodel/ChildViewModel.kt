@@ -36,10 +36,6 @@ class ChildViewModel @Inject constructor(
 
     init {
         GeoFenceHelper.init(app.applicationContext)
-        if (childId != "unknown_child") {
-            repository.scheduleSendAppsWorker(getApplication())
-        }
-
         repository.startListeningFromParent()
         viewModelScope.launch {
             repository.voiceMessageFromParent.collectLatest { msg ->

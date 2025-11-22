@@ -2,39 +2,23 @@ package com.example.childtrackerapp.parent.ui.viewmodel
 
 
 import android.app.Application
-import android.content.pm.PackageManager
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.childtrackerapp.parent.ui.model.AppInfo
-import com.example.childtrackerapp.parent.ui.model.Child
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import androidx.core.graphics.drawable.toBitmap
-import com.google.firebase.database.FirebaseDatabase
-import android.app.usage.UsageStatsManager
-import android.content.Context
-import android.content.pm.ApplicationInfo
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.util.Base64
-import android.util.Log
-import android.widget.Toast
-import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import com.example.childtrackerapp.Athu.data.SessionManager
 import com.example.childtrackerapp.parent.data.ParentRepository
-import com.example.childtrackerapp.parent.helper.toBitmapFromBase64
+import com.example.childtrackerapp.parent.ui.model.AppInfo
 import com.example.childtrackerapp.parent.ui.model.AppUsage
+import com.example.childtrackerapp.parent.ui.model.Child
 import com.example.childtrackerapp.parent.ui.model.UsageFilter
-import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.FirebaseDatabase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.tasks.await
-import org.json.JSONArray
-import java.util.Calendar
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -42,14 +26,11 @@ class AllowedAppsViewModel @Inject constructor(
     private val parentRepo: ParentRepository,
     @ApplicationContext app: Context
 ) : AndroidViewModel(app as Application){
-
     private val _uiState = MutableStateFlow(AllowedAppsUiState())
     val uiState: StateFlow<AllowedAppsUiState> = _uiState
-
     private val sessionManager = SessionManager(app)
     private val currentParentId: String? = sessionManager.getUserId()
     var selectedChildId: String? = null
-
 
     private val fb = FirebaseDatabase.getInstance().getReference("blocked_items");
 
@@ -82,6 +63,29 @@ class AllowedAppsViewModel @Inject constructor(
                     isLoading = false
                 )
             }
+        }
+    }
+    fun updateAppSettings(
+        appInfo: AppInfo,
+        onComplete: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            Log.d("AppSettingsVM", "Updating app: $appInfo")
+            val res = parentRepo.updateAppSettings(selectedChildId!!, appInfo)
+            if (res) {
+                updateLocalApp(appInfo)
+            }
+            onComplete(res)
+        }
+    }
+    private fun updateLocalApp(appInfo: AppInfo) {
+        val current = _uiState.value.apps.toMutableList()
+
+        val index = current.indexOfFirst { it.packageName == appInfo.packageName }
+        if (index != -1) {
+            current[index] = appInfo
+            _uiState.value = _uiState.value.copy(apps = current)
+            Log.d("AppSettingsVM", "UI updated locally for ${appInfo.packageName}")
         }
     }
 
@@ -117,6 +121,7 @@ class AllowedAppsViewModel @Inject constructor(
                     totalUsageMinutes = result.totalMinutes,
                     topApps = result.topApps,
                     allApps = result.allApps,
+                    filter = filter,
                     statisticsLoading = false
                 )
             }

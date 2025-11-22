@@ -8,12 +8,33 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.childtrackerapp.Athu.data.SessionManager
 import com.example.childtrackerapp.worker.AppStatusWorker
+import com.example.childtrackerapp.worker.AppsWorker
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class WorkerScheduler @Inject constructor(
     private val sessionManager: SessionManager
 ) {
+
+    fun scheduleSendAppsWorker(context: Context) {
+        val childId = sessionManager.getUserId() ?: return
+
+        // 1. Chạy ngay lần đầu
+        val immediateWork = OneTimeWorkRequestBuilder<AppsWorker>()
+            .setInputData(workDataOf("childId" to childId))
+            .build()
+        WorkManager.getInstance(context).enqueue(immediateWork)
+
+        // 2. Lên lịch định kỳ
+        val periodicWork = PeriodicWorkRequestBuilder<AppsWorker>(1, TimeUnit.HOURS)
+            .setInputData(workDataOf("childId" to childId))
+            .build()
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "send_apps_worker_$childId",
+            ExistingPeriodicWorkPolicy.REPLACE,
+            periodicWork
+        )
+    }
 
     fun scheduleAppStatusWorker(context: Context) {
         val childId = sessionManager.getUserId() ?: return
